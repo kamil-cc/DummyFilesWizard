@@ -7,7 +7,7 @@
 #include <QWizard>
 #include "settings/appsettings.h"
 
-//#define QT_NO_TRANSLATION
+#define QT_NO_TRANSLATION
 
 #ifndef QT_NO_TRANSLATION
     //If translation is enabled

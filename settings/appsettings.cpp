@@ -4,8 +4,10 @@
 const QString AppSettings::CFG_FILENAME = "cfg.ini";
 const QString AppSettings::LOG_FILENAME = ".log";
 
+
 //Shortcut
 typedef StaticText ST;
+
 
 /**
  * @brief AppSettings::initRuntimeArgs Parse command line arguments.
@@ -37,14 +39,17 @@ AppSettings::AppSettings(int inArgc, char *inArgv[],
         strncpy(argv[i], string, len + 1);
     }
 
-    //No delete statement because: https://doc.qt.io/qt-5/qapplication.html#QApplication
-    //"argc and argv might be changed as Qt removes command line arguments that it recognizes"
+    //No delete statement because:
+    //https://doc.qt.io/qt-5/qapplication.html#QApplication
+    //"argc and argv might be changed as Qt
+    //removes command line arguments that it recognizes"
     *outArgc = listLength;
     *outArgv = argv;
 
     //Initialize configuration variables
     argsInit();
 }
+
 
 /**
  * @brief AppSettings::parse Helper function for initRuntimeArgs
@@ -82,15 +87,30 @@ void AppSettings::parse(QString arg, QStringList &list){
 
 
 /**
- * @brief AppSettings::argsInit Set precedence of settings source
+ * @brief AppSettings::argsInit Set precedence of settings sources.
  */
 void AppSettings::argsInit(){
+    defaultArgsInit();
+    bool lastKnownConfig = lastKnownConfigExists();
     bool result = false;
     do{
         if(configFromCmd){
             result = loadFromFile();
+            if(!result){
+                Console::print(ST::WRONG_CONFIG_MSG);
+                configFromCmd = false;
+                exit(0);
+            }
         }else if(useCmdArgs){
             result = loadFromCmd(); // + Fill unset
+            if(!result){
+                useCmdArgs = false;
+            }
+        }else if(lastKnownConfig){
+            result = loadLastKnownConfig();
+            if(!result){
+                lastKnownConfig = false;
+            }
         }else{
             result = loadDefaults();
             if(!result){
@@ -100,19 +120,163 @@ void AppSettings::argsInit(){
     }while(!result);
 }
 
+void AppSettings::defaultArgsInit(){
+    QString defaultOutputVal(QDir::currentPath());
+    QString defaultLanguageVal(ST::PL_LANG);
+    QString defaultConfigVal(QDir::currentPath() +
+                             QString(QDir::separator()) + CFG_FILENAME);
+    QString defaultInputVal("");
+    QString defaultLogVal(QDateTime::currentDateTime().toString() +
+                          LOG_FILENAME);
+}
+
+bool AppSettings::lastKnownConfigExists(){
+
+}
+
+
+bool AppSettings::loadLastKnownConfig(){
+
+}
+
 
 bool AppSettings::loadFromFile(){
+    QString filePath("");
+    int listLength = propertiesList.length();
+    for(int i = 0; i < listLength; ++i){ //Map emulation
+        QString key = propertiesList.at(i).split(ST::EQUAL_SIGN).at(0);
+        QString value = propertiesList.at(i).split(ST::EQUAL_SIGN).at(1);
+        if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
+            filePath = value;
+        }
+    }
+    if(filePath.length() == 0){
+        return false;
+    }
+
+    QFile file(filePath);
+    QFileInfo info(filePath);
+    if((!file.exists())|| (!info.isReadable())){
+        return false;
+    }
+
+    return loadSettingsFromFile(filePath);
+}
+
+
+bool AppSettings::loadSettingsFromFile(QString filePath){
+    bool flags[Count] = {0};
+    QSettings settings(filePath, QSettings::IniFormat);
+    QString outputVal = settings.value(ST::OUTPUT_KEY, "").toString();
+    QString languageVal = settings.value(ST::LANGUAGE_KEY, "").toString();
+    QString configVal = settings.value(ST::CONFIG_KEY, "").toString();
+    QString inputVal = settings.value(ST::INPUT_KEY, "").toString();
+    QString logVal = settings.value(ST::LOG_KEY, "").toString();
+
+    if(outputVal.length() != 0){
+        flags[OUTPUT_ENUM] = true;
+    }
+    if(languageVal.length() != 0){
+        flags[LANGUAGE_ENUM] = true;
+    }
+
+    flags[CONFIG_ENUM] = true; //By definition
+    flags[INPUT_ENUM] = true; //By definition
+
+    if(logVal.length() != 0){
+        flags[LOG_ENUM] = true;
+    }
+
+    for(int i = 0; i < Count; ++i){
+        if(flags[i] == false){
+            return false;
+        }
+    }
+
+    if(!setFilesLocation(outputVal)){
+        return false;
+    }
+
+    if(!setLanguage(languageVal)){
+        return false;
+    }
+
+    setConfigLocation(filePath); //Do not check
+
+    if(!setTextFileLocation(inputVal)){
+        return false;
+    }
+
+    if(!setLogLocation(logVal)){
+        return false;
+    }
+}
+
+
+bool AppSettings::loadFromCmd(){
+    bool flags[Count] = {0};
+    QString outputVal;
+    QString languageVal;
+    QString configVal;
+    QString inputVal;
+    QString logVal;
+
+    int listLength = propertiesList.length();
+    for(int i = 0; i < listLength; ++i){ //QMap emulation
+        QString key = propertiesList.at(i).split(ST::EQUAL_SIGN).at(0);
+        QString value = propertiesList.at(i).split(ST::EQUAL_SIGN).at(1);
+        if(QString::compare(key, ST::OUTPUT_KEY, Qt::CaseInsensitive) == 0){
+            setFilesLocation(value); //TODO if()
+            flags[OUTPUT_ENUM] = true;
+        }
+        if(QString::compare(key, ST::LANGUAGE_KEY, Qt::CaseInsensitive) == 0){
+            setLanguage(value); //TODO if()
+            flags[LANGUAGE_ENUM] = true;
+        }
+        if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
+            setConfigLocation(value); //TODO if()
+            flags[CONFIG_ENUM] = true;
+        }
+        if(QString::compare(key, ST::INPUT_KEY, Qt::CaseInsensitive) == 0){
+            setTextFileLocation(value); //TODO if()
+            flags[INPUT_ENUM] = true;
+        }
+        if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
+            setLogLocation(value); //TODO if()
+            flags[CONFIG_ENUM] = true;
+        }
+    }
+
+    for(int i = 0; i < Count; ++i){
+        if(flags[i] == false){
+            switch (static_cast<Keys>(i)) {
+            case OUTPUT_ENUM:
+                setFilesLocation(defaultOutputVal); //TODO if()
+                break;
+            case LANGUAGE_ENUM:
+                setLanguage(defaultLanguageVal); //TODO if()
+                break;
+            case CONFIG_ENUM:
+                setConfigLocation(defaultConfigVal); //TODO if()
+                break;
+            case INPUT_ENUM:
+                setTextFileLocation(defaultInputVal); //TODO if()
+                break;
+            case LOG_ENUM:
+                break;
+                setLogLocation(defaultLogVal); //TODO if()
+            default:
+                break;
+            }
+        }
+    }
     return true;
 }
 
-bool AppSettings::loadFromCmd(){
-    return true;
-}
 
 bool AppSettings::loadDefaults(){
     return true;
 }
-
 
 
 void AppSettings::defaultCheck(){
@@ -143,6 +307,7 @@ void AppSettings::defaultCheck(){
         //QApplication::quit();
     }
 }
+
 
 /**
  * @brief AppSettings::displayHelp Displays help and stops program before calling constructor QApplication()
@@ -195,7 +360,8 @@ bool AppSettings::setLanguage(QString &lang){
  */
 bool AppSettings::setConfigLocation(QString &location){
     QFile cfg(location);
-    if(cfg.exists()){
+    QFileInfo info(location);
+    if(cfg.exists() && info.isReadable()){
         config = location;
     }else{
         return false;
@@ -210,8 +376,14 @@ bool AppSettings::setConfigLocation(QString &location){
  * @return
  */
 bool AppSettings::setTextFileLocation(QString &location){
+    if(location.length() == 0){
+        return true;
+    }
+
     QFile src(location);
-    if(src.exists() && (src.size() != 0)){
+    QFileInfo info(location);
+
+    if(((info.isFile()) && src.exists()) && ((src.size() != 0) && (info.isReadable()))){
         source = location;
     }else{
         return false;
@@ -227,12 +399,12 @@ bool AppSettings::setTextFileLocation(QString &location){
  */
 bool AppSettings::setLogLocation(QString &location){
     QFile file(location);
-    QFileInfo info(location);
-
     if(!file.exists()){
         file.open(QIODevice::WriteOnly);
         file.close();
     }
+
+    QFileInfo info(location);
     if(info.isFile() && info.isWritable()){
         log = location;
     }else{

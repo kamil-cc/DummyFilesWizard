@@ -1,4 +1,4 @@
-#include "dummywizard.h"
+  #include "dummywizard.h"
 #include "ui_dummywizard.h"
 
 
@@ -7,8 +7,10 @@
  * @param parent parent QWidget
  */
 DummyWizard::DummyWizard(QApplication &app, AppSettings &settings, QWidget *parent)
-                        : QWizard(parent), application(app), configuration(settings) {
-
+                        : QWizard(parent), application(app), configuration(settings){
+#ifndef QT_NO_TRANSLATION
+    enableTranslator();
+#endif
 
     //wizard.addPage(createConclusionPage()); //TODO
 
