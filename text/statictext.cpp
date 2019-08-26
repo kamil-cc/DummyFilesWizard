@@ -24,6 +24,14 @@ const QString StaticText::PL_LANG = "PL";
 const QString StaticText::EN_LANG = "EN";
 
 
+const QString StaticText::OUTPUT_KEY = "output";
+const QString StaticText::LANGUAGE_KEY = "language";
+const QString StaticText::CONFIG_KEY = "config";
+const QString StaticText::INPUT_KEY = "text";
+const QString StaticText::LOG_KEY = "log";
+
+const QString StaticText::EQUAL_SIGN = "=";
+
 StaticText::StaticText()
 {
 }

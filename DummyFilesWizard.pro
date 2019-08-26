@@ -18,14 +18,16 @@ SOURCES += main.cpp\
     templates/view.cpp \
     templates/controller.cpp \
     text/statictext.cpp \
-    console/console.cpp
+    console/console.cpp \
+    settings/appsettings.cpp
 
 HEADERS  += dummywizard.h \
     templates/model.h \
     templates/view.h \
     templates/controller.h \
     text/statictext.h \
-    console/console.h
+    console/console.h \
+    settings/appsettings.h
 
 FORMS    += dummywizard.ui
 

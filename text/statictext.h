@@ -26,6 +26,14 @@ public:
 
     static const QString PL_LANG;
     static const QString EN_LANG;
+
+    static const QString OUTPUT_KEY;
+    static const QString LANGUAGE_KEY;
+    static const QString CONFIG_KEY;
+    static const QString INPUT_KEY;
+    static const QString LOG_KEY;
+
+    static const QString EQUAL_SIGN;
 };
 
 #endif // STATICTEXT_H
