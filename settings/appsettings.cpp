@@ -19,7 +19,7 @@ typedef StaticText ST;
 AppSettings::AppSettings(int inArgc, char *inArgv[],
                          int *outArgc, char ***outArgv) :
                          useCmdArgs(false), configFromCmd(false),
-                         storeSettings(false) {
+                         prepareToStore(false) {
     QStringList list;
 
     //For each command line argument
@@ -53,7 +53,7 @@ AppSettings::AppSettings(int inArgc, char *inArgv[],
 
 
 /**
- * @brief AppSettings::parse Helper function for initRuntimeArgs
+ * @brief AppSettings::parse Divide arguments list into two subests
  * @param arg single argument
  * @param list transfer commands to QApplication
  */
@@ -88,13 +88,15 @@ void AppSettings::parse(QString arg, QStringList &list){
 
 
 /**
- * @brief AppSettings::argsInit Set precedence of settings sources. Load settings.
+ * @brief AppSettings::argsInit Set precedence of config sources. Load settings.
  */
 void AppSettings::argsInit(){
     defaultArgsInit();
     bool lastKnownConfig = lastKnownConfigExists();
     bool result = false;
 
+    //Check settings sources in right order.
+    //If one fails try another.
     do{
         if(configFromCmd){
             result = loadSettingsFromProvidedFile();
@@ -111,14 +113,22 @@ void AppSettings::argsInit(){
             result = loadLastKnownConfig();
             if(!result){
                 lastKnownConfig = false;
+            }else{
+                prepareToStore = true;
             }
         }else{
             result = loadSettingsFromDefaults();
             if(!result){
                 exit(0);
+            }else{
+                prepareToStore = true;
             }
         }
     }while(!result);
+
+    if(prepareToStore){
+
+    }
 }
 
 
@@ -129,10 +139,13 @@ void AppSettings::defaultArgsInit(){
     defaultOutputVal = QDir::currentPath();
     defaultLanguageVal = ST::PL_LANG;
     defaultConfigVal = QDir::currentPath() +
-                             QString(QDir::separator()) + CFG_FILENAME;
+                       QString(QDir::separator()) +
+                       CFG_FILENAME;
     defaultInputVal = "";
-    defaultLogVal = QDateTime::currentDateTime().toString() +
-                          LOG_FILENAME;
+    defaultLogVal = QDir::currentPath() +
+                    QString(QDir::separator()) +
+                    QDateTime::currentDateTime().toString() +
+                    LOG_FILENAME;
 }
 
 
@@ -151,11 +164,19 @@ bool AppSettings::lastKnownConfigExists(){
 }
 
 
+/**
+ * @brief AppSettings::loadLastKnownConfig Load confing file from execution directory.
+ * @return
+ */
 bool AppSettings::loadLastKnownConfig(){
     return loadSettingsFromFile(defaultConfigVal);
 }
 
 
+/**
+ * @brief AppSettings::loadSettingsFromProvidedFile
+ * @return
+ */
 bool AppSettings::loadSettingsFromProvidedFile(){
     QString filePath("");
     int listLength = propertiesList.length();
@@ -180,6 +201,11 @@ bool AppSettings::loadSettingsFromProvidedFile(){
 }
 
 
+/**
+ * @brief AppSettings::loadSettingsFromFile load settings from specified file
+ * @param filePath path to configuration file
+ * @return true if settings imported, false otherwise
+ */
 bool AppSettings::loadSettingsFromFile(QString filePath){
     bool flags[COUNT] = {0};
     QSettings settings(filePath, QSettings::IniFormat);
@@ -235,21 +261,20 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
  */
 bool AppSettings::loadSettingsFromCmd(){
     bool flags[COUNT] = {0};
-    QString outputVal;
-    QString languageVal;
-    QString configVal;
-    QString inputVal;
-    QString logVal;
-
     int listLength = propertiesList.length();
+
+    //For each given cmdline argument
     for(int i = 0; i < listLength; ++i){ //QMap emulation
         QString key = propertiesList.at(i).split(ST::EQUAL_SIGN).at(0);
         QString value = propertiesList.at(i).split(ST::EQUAL_SIGN).at(1);
+
+        //Detect command type and try to set corresponding variable
         if(QString::compare(key, ST::OUTPUT_KEY, Qt::CaseInsensitive) == 0){
             if(setOutputDirLocation(value)){ //Load from cmd
                 flags[OUTPUT_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_OUTPUT_MSG);
+                return false;
             }
         }
         if(QString::compare(key, ST::LANGUAGE_KEY, Qt::CaseInsensitive) == 0){
@@ -257,6 +282,7 @@ bool AppSettings::loadSettingsFromCmd(){
                 flags[LANGUAGE_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_LANGUAGE_MSG);
+                return false;
             }
         }
         if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
@@ -264,6 +290,7 @@ bool AppSettings::loadSettingsFromCmd(){
                 flags[CONFIG_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_CONFIG_MSG);
+                return false;
             }
         }
         if(QString::compare(key, ST::INPUT_KEY, Qt::CaseInsensitive) == 0){
@@ -271,6 +298,7 @@ bool AppSettings::loadSettingsFromCmd(){
                 flags[INPUT_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_INPUT_MSG);
+                return false;
             }
         }
         if(QString::compare(key, ST::LOG_KEY, Qt::CaseInsensitive) == 0){
@@ -278,10 +306,12 @@ bool AppSettings::loadSettingsFromCmd(){
                 flags[CONFIG_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_LOG_MSG);
+                return false;
             }
         }
     }
 
+    //For uninitialized setting variables
     for(int i = 0; i < COUNT; ++i){
         if(flags[i] == false){
             switch (static_cast<Keys>(i)) {
@@ -298,23 +328,17 @@ bool AppSettings::loadSettingsFromCmd(){
                 }
                 break;
             case CONFIG_ENUM:
-                if(!setConfigFileLocation(defaultConfigVal)){
-                    Console::print(ST::WRONG_DEFAULT_MSG);
-                    exit(0);
-                }
+                setConfigFileLocation(defaultConfigVal);
                 break;
             case INPUT_ENUM:
-                if(!setInputFileLocation(defaultInputVal)){
-                    Console::print(ST::WRONG_DEFAULT_MSG);
-                    exit(0);
-                }
+                    source = defaultInputVal;
                 break;
             case LOG_ENUM:
-                break;
                 if(!setLogFileLocation(defaultLogVal)){
                     Console::print(ST::WRONG_DEFAULT_MSG);
                     exit(0);
                 }
+                break;
             default:
                 break;
             }
@@ -329,9 +353,49 @@ bool AppSettings::loadSettingsFromCmd(){
  * @return true if settings are correct, false otherwise
  */
 bool AppSettings::loadSettingsFromDefaults(){
+    for(int i = 0; i < COUNT; ++i){
+        switch (static_cast<Keys>(i)) {
+        case OUTPUT_ENUM:
+            if(!setOutputDirLocation(defaultOutputVal)){
+                Console::print(ST::WRONG_DEFAULT_MSG);
+                exit(0);
+            }
+            break;
+        case LANGUAGE_ENUM:
+            if(!setLanguage(defaultLanguageVal)){
+                Console::print(ST::WRONG_DEFAULT_MSG);
+                exit(0);
+            }
+            break;
+        case CONFIG_ENUM:
+            createDefaultConfigFile();
+            break;
+        case INPUT_ENUM:
+                source = defaultInputVal;
+            break;
+        case LOG_ENUM:
+            break;
+            if(!setLogFileLocation(defaultLogVal)){
+                Console::print(ST::WRONG_DEFAULT_MSG);
+                exit(0);
+            }
+        default:
+            break;
+        }
+    }
     return true;
 }
 
+/**
+ * @brief AppSettings::createDefaultConfigFile Create file if does not exist.
+ */
+void AppSettings::createDefaultConfigFile(){
+    QFile file(defaultConfigVal);
+    if(!file.exists()){
+        file.open(QIODevice::WriteOnly);
+        file.close();
+    }
+}
 
 /**
  * @brief AppSettings::displayHelp Displays help and stops program before calling constructor QApplication()

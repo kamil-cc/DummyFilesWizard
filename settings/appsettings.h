@@ -36,6 +36,7 @@ private:
     bool lastKnownConfigExists();
     bool loadLastKnownConfig();
     bool loadSettingsFromFile(QString filePath);
+    void createDefaultConfigFile();
 
     //Smart setters
     bool setOutputDirLocation(QString &location);
@@ -62,7 +63,7 @@ private:
     //Variables
     bool useCmdArgs;
     bool configFromCmd;
-    bool storeSettings;
+    bool prepareToStore;
     QStringList propertiesList;
 
 private:
