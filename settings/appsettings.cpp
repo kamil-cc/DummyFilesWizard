@@ -10,7 +10,7 @@ typedef StaticText ST;
 
 
 /**
- * @brief AppSettings::initRuntimeArgs Parse command line arguments.
+ * @brief AppSettings::initRuntimeArgs Parse command line arguments. Init settings.
  * @param inArgc counter received from main function
  * @param inArgv arguments received from main function
  * @param outArgc counter passing to QApplication constructor
@@ -87,22 +87,22 @@ void AppSettings::parse(QString arg, QStringList &list){
 
 
 /**
- * @brief AppSettings::argsInit Set precedence of settings sources.
+ * @brief AppSettings::argsInit Set precedence of settings sources. Load settings.
  */
 void AppSettings::argsInit(){
     defaultArgsInit();
     bool lastKnownConfig = lastKnownConfigExists();
     bool result = false;
+
     do{
         if(configFromCmd){
-            result = loadFromFile();
+            result = loadSettingsFromProvidedFile();
             if(!result){
                 Console::print(ST::WRONG_CONFIG_MSG);
                 configFromCmd = false;
-                exit(0);
             }
         }else if(useCmdArgs){
-            result = loadFromCmd(); // + Fill unset
+            result = loadSettingsFromCmd();
             if(!result){
                 useCmdArgs = false;
             }
@@ -112,7 +112,7 @@ void AppSettings::argsInit(){
                 lastKnownConfig = false;
             }
         }else{
-            result = loadDefaults();
+            result = loadSettingsFromDefaults();
             if(!result){
                 exit(0);
             }
@@ -120,6 +120,10 @@ void AppSettings::argsInit(){
     }while(!result);
 }
 
+
+/**
+ * @brief AppSettings::defaultArgsInit Set default configuration values.
+ */
 void AppSettings::defaultArgsInit(){
     defaultOutputVal = QDir::currentPath();
     defaultLanguageVal = ST::PL_LANG;
@@ -130,17 +134,28 @@ void AppSettings::defaultArgsInit(){
                           LOG_FILENAME;
 }
 
-bool AppSettings::lastKnownConfigExists(){
 
+/**
+ * @brief AppSettings::lastKnownConfigExists Check if default configuration file exists.
+ * @return true if file exist, false if file does not exist
+ */
+bool AppSettings::lastKnownConfigExists(){
+    QFile file(defaultConfigVal);
+    QFileInfo info(defaultConfigVal);
+
+    if((!file.exists()) || (!info.isReadable())){
+        return false;
+    }
+    return true;
 }
 
 
 bool AppSettings::loadLastKnownConfig(){
-
+    return loadSettingsFromFile(defaultConfigVal);
 }
 
 
-bool AppSettings::loadFromFile(){
+bool AppSettings::loadSettingsFromProvidedFile(){
     QString filePath("");
     int listLength = propertiesList.length();
     for(int i = 0; i < listLength; ++i){ //Map emulation
@@ -165,7 +180,7 @@ bool AppSettings::loadFromFile(){
 
 
 bool AppSettings::loadSettingsFromFile(QString filePath){
-    bool flags[Count] = {0};
+    bool flags[COUNT] = {0};
     QSettings settings(filePath, QSettings::IniFormat);
     QString outputVal = settings.value(ST::OUTPUT_KEY, "").toString();
     QString languageVal = settings.value(ST::LANGUAGE_KEY, "").toString();
@@ -187,13 +202,13 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
         flags[LOG_ENUM] = true;
     }
 
-    for(int i = 0; i < Count; ++i){
+    for(int i = 0; i < COUNT; ++i){
         if(flags[i] == false){
             return false;
         }
     }
 
-    if(!setFilesLocation(outputVal)){
+    if(!setOutputLocation(outputVal)){
         return false;
     }
 
@@ -213,9 +228,12 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
     return true;
 }
 
-
-bool AppSettings::loadFromCmd(){
-    bool flags[Count] = {0};
+/**
+ * @brief AppSettings::loadFromCmd Try to initialize settings with commandline arguments.
+ * @return true commandline arguments are valid, false commandline arguments are invalid
+ */
+bool AppSettings::loadSettingsFromCmd(){
+    bool flags[COUNT] = {0};
     QString outputVal;
     QString languageVal;
     QString configVal;
@@ -227,45 +245,75 @@ bool AppSettings::loadFromCmd(){
         QString key = propertiesList.at(i).split(ST::EQUAL_SIGN).at(0);
         QString value = propertiesList.at(i).split(ST::EQUAL_SIGN).at(1);
         if(QString::compare(key, ST::OUTPUT_KEY, Qt::CaseInsensitive) == 0){
-            setFilesLocation(value); //TODO if()
-            flags[OUTPUT_ENUM] = true;
+            if(setOutputLocation(value)){ //Load from cmd
+                flags[OUTPUT_ENUM] = true;
+            }else{
+                Console::print(ST::WRONG_OUTPUT_MSG);
+            }
         }
         if(QString::compare(key, ST::LANGUAGE_KEY, Qt::CaseInsensitive) == 0){
-            setLanguage(value); //TODO if()
-            flags[LANGUAGE_ENUM] = true;
+            if(setLanguage(value)){
+                flags[LANGUAGE_ENUM] = true;
+            }else{
+                Console::print(ST::WRONG_LANGUAGE_MSG);
+            }
         }
         if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
-            setConfigLocation(value); //TODO if()
-            flags[CONFIG_ENUM] = true;
+            if(setConfigLocation(value)){
+                flags[CONFIG_ENUM] = true;
+            }else{
+                Console::print(ST::WRONG_CONFIG_MSG);
+            }
         }
         if(QString::compare(key, ST::INPUT_KEY, Qt::CaseInsensitive) == 0){
-            setTextFileLocation(value); //TODO if()
-            flags[INPUT_ENUM] = true;
+            if(setTextFileLocation(value)){
+                flags[INPUT_ENUM] = true;
+            }else{
+                Console::print(ST::WRONG_INPUT_MSG);
+            }
         }
-        if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
-            setLogLocation(value); //TODO if()
-            flags[CONFIG_ENUM] = true;
+        if(QString::compare(key, ST::LOG_KEY, Qt::CaseInsensitive) == 0){
+            if(setLogLocation(value)){
+                flags[CONFIG_ENUM] = true;
+            }else{
+                Console::print(ST::WRONG_LOG_MSG);
+            }
         }
     }
 
-    for(int i = 0; i < Count; ++i){
+    for(int i = 0; i < COUNT; ++i){
         if(flags[i] == false){
             switch (static_cast<Keys>(i)) {
             case OUTPUT_ENUM:
-                setFilesLocation(defaultOutputVal); //TODO if()
+                if(!setOutputLocation(defaultOutputVal)){
+                    Console::print(ST::WRONG_DEFAULT_MSG);
+                    exit(0);
+                }
                 break;
             case LANGUAGE_ENUM:
-                setLanguage(defaultLanguageVal); //TODO if()
+                if(!setLanguage(defaultLanguageVal)){
+                    Console::print(ST::WRONG_DEFAULT_MSG);
+                    exit(0);
+                }
                 break;
             case CONFIG_ENUM:
-                setConfigLocation(defaultConfigVal); //TODO if()
+                if(!setConfigLocation(defaultConfigVal)){
+                    Console::print(ST::WRONG_DEFAULT_MSG);
+                    exit(0);
+                }
                 break;
             case INPUT_ENUM:
-                setTextFileLocation(defaultInputVal); //TODO if()
+                if(!setTextFileLocation(defaultInputVal)){
+                    Console::print(ST::WRONG_DEFAULT_MSG);
+                    exit(0);
+                }
                 break;
             case LOG_ENUM:
                 break;
-                setLogLocation(defaultLogVal); //TODO if()
+                if(!setLogLocation(defaultLogVal)){
+                    Console::print(ST::WRONG_DEFAULT_MSG);
+                    exit(0);
+                }
             default:
                 break;
             }
@@ -275,12 +323,12 @@ bool AppSettings::loadFromCmd(){
 }
 
 
-bool AppSettings::loadDefaults(){
+bool AppSettings::loadSettingsFromDefaults(){
     return true;
 }
 
 
-void AppSettings::defaultCheck(){
+/*void AppSettings::defaultCheck(){
     QFileInfo info(destination.absolutePath());
     if(!info.isWritable()){
         //QApplication::quit();
@@ -307,7 +355,7 @@ void AppSettings::defaultCheck(){
     if(!inf2.isWritable()){
         //QApplication::quit();
     }
-}
+}*/
 
 
 /**
@@ -322,14 +370,14 @@ void AppSettings::displayHelp(){
 /**
  * @brief AppSettings::setFilesLocation Function checks if output dir exists and if is writable
  * @param location path to output dir
- * @return
+ * @return true output dir exist and is writable, false output dir does not exist or is not writable
  */
-bool AppSettings::setFilesLocation(QString &location){
+bool AppSettings::setOutputLocation(QString &location){
     QDir dir = QDir(location);
     QFileInfo info(location);
 
     if(dir.exists() && info.isDir() && info.isWritable()){
-        destination = dir;
+        output = dir;
     }else{
         return false;
     }
@@ -340,7 +388,7 @@ bool AppSettings::setFilesLocation(QString &location){
 /**
  * @brief AppSettings::setLanguage Function check if langue parameter is valid
  * @param lang language abbreviation
- * @return
+ * @return true language argument is valid, false language argument is not valid
  */
 bool AppSettings::setLanguage(QString &lang){
     if(QString::compare(lang, ST::EN_LANG, Qt::CaseInsensitive) == 0){
@@ -357,7 +405,7 @@ bool AppSettings::setLanguage(QString &lang){
 /**
  * @brief AppSettings::setConfigLocation Checks if configuration file exists
  * @param location path to configuration file
- * @return
+ * @return true when file exist and is readable, false if file does not exist or is not readable
  */
 bool AppSettings::setConfigLocation(QString &location){
     QFile cfg(location);
@@ -373,8 +421,8 @@ bool AppSettings::setConfigLocation(QString &location){
 
 /**
  * @brief AppSettings::setTextFileLocation Check if specified input file exists and it size is not equal to 0
- * @param location
- * @return
+ * @param location path to input file
+ * @return true if file exists, has size >0 and is readable, false otherwise
  */
 bool AppSettings::setTextFileLocation(QString &location){
     if(location.length() == 0){
@@ -396,7 +444,7 @@ bool AppSettings::setTextFileLocation(QString &location){
 /**
  * @brief AppSettings::setLogLocation Check if path to log file is valid and is writable
  * @param location path to log file
- * @return
+ * @return true if file exist and is writable, false when could not be created or is not writable
  */
 bool AppSettings::setLogLocation(QString &location){
     QFile file(location);
@@ -413,14 +461,3 @@ bool AppSettings::setLogLocation(QString &location){
     }
     return true;
 }
-
-//Initialize static vars
-/*QDir AppSettings::destination(QDir::currentPath());
-QString AppSettings::language("PL");
-QString AppSettings::config(QDir::currentPath() +
-                            QString(QDir::separator()) + CFG_FILENAME);
-QString AppSettings::source("");
-QString AppSettings::log(QDir::currentPath() + QString(QDir::separator()) +
-                         QDateTime::currentDateTime().toString() + LOG_FILENAME);
-bool AppSettings::useCmdArgs(false);
-bool AppSettings::configFromCmd(false);*/

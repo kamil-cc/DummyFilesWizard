@@ -23,6 +23,7 @@ public:
     static const QString WRONG_CONFIG_MSG;
     static const QString WRONG_INPUT_MSG;
     static const QString WRONG_LOG_MSG;
+    static const QString WRONG_DEFAULT_MSG;
 
     static const QString PL_LANG;
     static const QString EN_LANG;

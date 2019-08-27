@@ -19,6 +19,7 @@ const QString StaticText::WRONG_LANGUAGE_MSG = "Error in \'-language=\' option!"
 const QString StaticText::WRONG_CONFIG_MSG = "Error in \'-config=\' option or error in config file!";
 const QString StaticText::WRONG_INPUT_MSG = "Error in \'-text=\' option!";
 const QString StaticText::WRONG_LOG_MSG = "Error in \'-log=\' option!";
+const QString StaticText::WRONG_DEFAULT_MSG = "Error. Default runtime arguments are not valid.";
 
 const QString StaticText::PL_LANG = "PL";
 const QString StaticText::EN_LANG = "EN";
