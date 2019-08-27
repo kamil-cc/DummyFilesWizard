@@ -10,7 +10,7 @@ typedef StaticText ST;
 
 
 /**
- * @brief AppSettings::initRuntimeArgs Parse command line arguments. Init settings.
+ * @brief AppSettings::AppSettings Parse command line arguments. Init settings.
  * @param inArgc counter received from main function
  * @param inArgv arguments received from main function
  * @param outArgc counter passing to QApplication constructor
@@ -18,7 +18,8 @@ typedef StaticText ST;
  */
 AppSettings::AppSettings(int inArgc, char *inArgv[],
                          int *outArgc, char ***outArgv) :
-                         useCmdArgs(false), configFromCmd(false){
+                         useCmdArgs(false), configFromCmd(false),
+                         storeSettings(false) {
     QStringList list;
 
     //For each command line argument
@@ -208,7 +209,7 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
         }
     }
 
-    if(!setOutputLocation(outputVal)){
+    if(!setOutputDirLocation(outputVal)){
         return false;
     }
 
@@ -216,20 +217,20 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
         return false;
     }
 
-    setConfigLocation(filePath); //Do not check
+    setConfigFileLocation(filePath); //Do not check
 
-    if(!setTextFileLocation(inputVal)){
+    if(!setInputFileLocation(inputVal)){
         return false;
     }
 
-    if(!setLogLocation(logVal)){
+    if(!setLogFileLocation(logVal)){
         return false;
     }
     return true;
 }
 
 /**
- * @brief AppSettings::loadFromCmd Try to initialize settings with commandline arguments.
+ * @brief AppSettings::loadSettingsFromCmd Try to initialize settings with commandline arguments.
  * @return true commandline arguments are valid, false commandline arguments are invalid
  */
 bool AppSettings::loadSettingsFromCmd(){
@@ -245,7 +246,7 @@ bool AppSettings::loadSettingsFromCmd(){
         QString key = propertiesList.at(i).split(ST::EQUAL_SIGN).at(0);
         QString value = propertiesList.at(i).split(ST::EQUAL_SIGN).at(1);
         if(QString::compare(key, ST::OUTPUT_KEY, Qt::CaseInsensitive) == 0){
-            if(setOutputLocation(value)){ //Load from cmd
+            if(setOutputDirLocation(value)){ //Load from cmd
                 flags[OUTPUT_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_OUTPUT_MSG);
@@ -259,21 +260,21 @@ bool AppSettings::loadSettingsFromCmd(){
             }
         }
         if(QString::compare(key, ST::CONFIG_KEY, Qt::CaseInsensitive) == 0){
-            if(setConfigLocation(value)){
+            if(setConfigFileLocation(value)){
                 flags[CONFIG_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_CONFIG_MSG);
             }
         }
         if(QString::compare(key, ST::INPUT_KEY, Qt::CaseInsensitive) == 0){
-            if(setTextFileLocation(value)){
+            if(setInputFileLocation(value)){
                 flags[INPUT_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_INPUT_MSG);
             }
         }
         if(QString::compare(key, ST::LOG_KEY, Qt::CaseInsensitive) == 0){
-            if(setLogLocation(value)){
+            if(setLogFileLocation(value)){
                 flags[CONFIG_ENUM] = true;
             }else{
                 Console::print(ST::WRONG_LOG_MSG);
@@ -285,7 +286,7 @@ bool AppSettings::loadSettingsFromCmd(){
         if(flags[i] == false){
             switch (static_cast<Keys>(i)) {
             case OUTPUT_ENUM:
-                if(!setOutputLocation(defaultOutputVal)){
+                if(!setOutputDirLocation(defaultOutputVal)){
                     Console::print(ST::WRONG_DEFAULT_MSG);
                     exit(0);
                 }
@@ -297,20 +298,20 @@ bool AppSettings::loadSettingsFromCmd(){
                 }
                 break;
             case CONFIG_ENUM:
-                if(!setConfigLocation(defaultConfigVal)){
+                if(!setConfigFileLocation(defaultConfigVal)){
                     Console::print(ST::WRONG_DEFAULT_MSG);
                     exit(0);
                 }
                 break;
             case INPUT_ENUM:
-                if(!setTextFileLocation(defaultInputVal)){
+                if(!setInputFileLocation(defaultInputVal)){
                     Console::print(ST::WRONG_DEFAULT_MSG);
                     exit(0);
                 }
                 break;
             case LOG_ENUM:
                 break;
-                if(!setLogLocation(defaultLogVal)){
+                if(!setLogFileLocation(defaultLogVal)){
                     Console::print(ST::WRONG_DEFAULT_MSG);
                     exit(0);
                 }
@@ -323,39 +324,13 @@ bool AppSettings::loadSettingsFromCmd(){
 }
 
 
+/**
+ * @brief AppSettings::loadSettingsFromDefaults Loads and verifies default generic settings
+ * @return true if settings are correct, false otherwise
+ */
 bool AppSettings::loadSettingsFromDefaults(){
     return true;
 }
-
-
-/*void AppSettings::defaultCheck(){
-    QFileInfo info(destination.absolutePath());
-    if(!info.isWritable()){
-        //QApplication::quit();
-    }
-
-    QFile file(config);
-    if(!file.exists()){
-        file.open(QIODevice::WriteOnly);
-        file.close();
-    }
-
-    QFileInfo inf(config);
-    if(!inf.isWritable()){
-        //QApplication::quit();
-    }
-
-    QFile file2(log);
-    if(!file2.exists()){
-        file2.open(QIODevice::WriteOnly);
-        file2.close();
-    }
-
-    QFileInfo inf2(log);
-    if(!inf2.isWritable()){
-        //QApplication::quit();
-    }
-}*/
 
 
 /**
@@ -368,11 +343,11 @@ void AppSettings::displayHelp(){
 
 
 /**
- * @brief AppSettings::setFilesLocation Function checks if output dir exists and if is writable
+ * @brief AppSettings::setOutputDirLocation Function checks if output dir exists and if is writable
  * @param location path to output dir
  * @return true output dir exist and is writable, false output dir does not exist or is not writable
  */
-bool AppSettings::setOutputLocation(QString &location){
+bool AppSettings::setOutputDirLocation(QString &location){
     QDir dir = QDir(location);
     QFileInfo info(location);
 
@@ -403,11 +378,11 @@ bool AppSettings::setLanguage(QString &lang){
 
 
 /**
- * @brief AppSettings::setConfigLocation Checks if configuration file exists
+ * @brief AppSettings::setConfigFileLocation Checks if configuration file exists
  * @param location path to configuration file
  * @return true when file exist and is readable, false if file does not exist or is not readable
  */
-bool AppSettings::setConfigLocation(QString &location){
+bool AppSettings::setConfigFileLocation(QString &location){
     QFile cfg(location);
     QFileInfo info(location);
     if(cfg.exists() && info.isReadable()){
@@ -420,11 +395,11 @@ bool AppSettings::setConfigLocation(QString &location){
 
 
 /**
- * @brief AppSettings::setTextFileLocation Check if specified input file exists and it size is not equal to 0
+ * @brief AppSettings::setInputFileLocation Check if specified input file exists and it size is not equal to 0
  * @param location path to input file
  * @return true if file exists, has size >0 and is readable, false otherwise
  */
-bool AppSettings::setTextFileLocation(QString &location){
+bool AppSettings::setInputFileLocation(QString &location){
     if(location.length() == 0){
         return true;
     }
@@ -442,11 +417,11 @@ bool AppSettings::setTextFileLocation(QString &location){
 
 
 /**
- * @brief AppSettings::setLogLocation Check if path to log file is valid and is writable
+ * @brief AppSettings::setLogFileLocation Check if path to log file is valid and is writable
  * @param location path to log file
  * @return true if file exist and is writable, false when could not be created or is not writable
  */
-bool AppSettings::setLogLocation(QString &location){
+bool AppSettings::setLogFileLocation(QString &location){
     QFile file(location);
     if(!file.exists()){
         file.open(QIODevice::WriteOnly);

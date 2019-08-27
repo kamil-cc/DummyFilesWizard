@@ -38,11 +38,11 @@ private:
     bool loadSettingsFromFile(QString filePath);
 
     //Smart setters
-    bool setOutputLocation(QString &location);
+    bool setOutputDirLocation(QString &location);
     bool setLanguage(QString &language);
-    bool setConfigLocation(QString &location);
-    bool setTextFileLocation(QString &location);
-    bool setLogLocation(QString &location);
+    bool setConfigFileLocation(QString &location);
+    bool setInputFileLocation(QString &location);
+    bool setLogFileLocation(QString &location);
 
 private:
     //Settings vars
@@ -62,6 +62,7 @@ private:
     //Variables
     bool useCmdArgs;
     bool configFromCmd;
+    bool storeSettings;
     QStringList propertiesList;
 
 private:
