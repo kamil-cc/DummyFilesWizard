@@ -121,13 +121,13 @@ void AppSettings::argsInit(){
 }
 
 void AppSettings::defaultArgsInit(){
-    QString defaultOutputVal(QDir::currentPath());
-    QString defaultLanguageVal(ST::PL_LANG);
-    QString defaultConfigVal(QDir::currentPath() +
-                             QString(QDir::separator()) + CFG_FILENAME);
-    QString defaultInputVal("");
-    QString defaultLogVal(QDateTime::currentDateTime().toString() +
-                          LOG_FILENAME);
+    defaultOutputVal = QDir::currentPath();
+    defaultLanguageVal = ST::PL_LANG;
+    defaultConfigVal = QDir::currentPath() +
+                             QString(QDir::separator()) + CFG_FILENAME;
+    defaultInputVal = "";
+    defaultLogVal = QDateTime::currentDateTime().toString() +
+                          LOG_FILENAME;
 }
 
 bool AppSettings::lastKnownConfigExists(){

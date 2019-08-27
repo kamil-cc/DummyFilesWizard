@@ -10,7 +10,7 @@ const QString StaticText::LOG_LOCATION_CMD = "-log=";
 const QString StaticText::HELP_MSG = "-help\t\t\tDisplay this message.\n"
                                "-output=/some/dir/\tOutput files will be stored in /some/dir/\n"
                                "-language=EN\t\tForce to use specified language. Possible values are: PL and EN.\n"
-                               "-config=/some/cfg.ini\tUse settings from config.ini file. Other command line options are ignored.\n"
+                               "-config=/some/cfg.ini\tUse settings from cfg.ini file. Other command line options are ignored.\n"
                                "-text=/some/file.txt\tUse file.txt as input for text generator.\n"
                                "-log=/some/file.log\tWrite log to specified file.";
 
