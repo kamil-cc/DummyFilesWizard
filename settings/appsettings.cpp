@@ -156,7 +156,7 @@ bool AppSettings::loadFromFile(){
 
     QFile file(filePath);
     QFileInfo info(filePath);
-    if((!file.exists())|| (!info.isReadable())){
+    if((!file.exists()) || (!info.isReadable())){
         return false;
     }
 
@@ -210,6 +210,7 @@ bool AppSettings::loadSettingsFromFile(QString filePath){
     if(!setLogLocation(logVal)){
         return false;
     }
+    return true;
 }
 
 
