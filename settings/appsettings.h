@@ -1,19 +1,12 @@
 #ifndef APPSETTINGS_H
 #define APPSETTINGS_H
 
-#include <QDateTime>
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QSettings>
+#include <QString>
 #include <QStringList>
+#include <QMap>
 
 #include "text/statictext.h"
 #include "console/console.h"
-
-
-// Enum to easily create flags array
-enum Keys {OUTPUT_ENUM, LANGUAGE_ENUM, CONFIG_ENUM, INPUT_ENUM, LOG_ENUM, COUNT};
 
 
 class AppSettings : public QObject
@@ -26,45 +19,17 @@ public:
 
 private:
     //Methods
-    void displayHelp();
-    void parse(QString arg, QStringList &list);
+    void parse(QString arg);
     void argsInit();
-    void defaultArgsInit();
-    bool loadSettingsFromProvidedFile();
-    bool loadSettingsFromCmd();
-    bool loadSettingsFromDefaults();
-    bool lastKnownConfigExists();
-    bool loadLastKnownConfig();
-    bool loadSettingsFromFile(QString filePath);
-    void createDefaultConfigFile();
-
-    //Smart setters
-    bool setOutputDirLocation(QString &location);
-    bool setLanguage(QString &language);
-    bool setConfigFileLocation(QString &location);
-    bool setInputFileLocation(QString &location);
-    bool setLogFileLocation(QString &location);
+    void displayHelp();
 
 private:
-    //Settings vars
-    QDir output;
-    QString language;
-    QString config;
-    QString source;
-    QString log;
-
-    //Default settings
-    QString defaultOutputVal;
-    QString defaultLanguageVal;
-    QString defaultConfigVal;
-    QString defaultInputVal;
-    QString defaultLogVal;
-
     //Variables
     bool useCmdArgs;
-    bool configFromCmd;
-    bool prepareToStore;
-    QStringList propertiesList;
+    bool configFileGiven;
+    QStringList argsToBypass;
+    QStringList keysToConsume;
+    QStringList valuesToConsume;
 
 private:
     //Static constants

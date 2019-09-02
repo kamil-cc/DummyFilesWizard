@@ -24,15 +24,15 @@ const QString StaticText::WRONG_DEFAULT_MSG = "Error. Default runtime arguments 
 const QString StaticText::PL_LANG = "PL";
 const QString StaticText::EN_LANG = "EN";
 
+const QString StaticText::FILES_LOCATION_KEY = "output";
+const QString StaticText::LANG_KEY = "language";
+const QString StaticText::CONFIG_LOCATION_KEY = "config";
+const QString StaticText::TEXT_LOCATION_KEY = "text";
+const QString StaticText::LOG_LOCATION_KEY = "log";
 
-const QString StaticText::OUTPUT_KEY = "output";
-const QString StaticText::LANGUAGE_KEY = "language";
-const QString StaticText::CONFIG_KEY = "config";
-const QString StaticText::INPUT_KEY = "text";
-const QString StaticText::LOG_KEY = "log";
-
-const QString StaticText::EQUAL_SIGN = "=";
-
+/**
+ * @brief StaticText::StaticText Private constructor. We don't need to create StaticText object.
+ */
 StaticText::StaticText()
 {
 }

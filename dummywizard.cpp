@@ -1,4 +1,4 @@
-  #include "dummywizard.h"
+#include "dummywizard.h"
 #include "ui_dummywizard.h"
 
 
