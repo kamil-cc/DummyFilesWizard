@@ -1,14 +1,8 @@
 #include "appsettings.h"
 
-
 //Default filenames
 const QString AppSettings::CFG_FILENAME = "cfg.ini";
 const QString AppSettings::LOG_FILENAME = ".log";
-
-
-//Shortcut
-typedef StaticText ST;
-
 
 /**
  * @brief AppSettings::AppSettings Parse command line arguments. Init settings.
@@ -19,7 +13,8 @@ typedef StaticText ST;
  */
 AppSettings::AppSettings(int inArgc, char *inArgv[],
                          int *outArgc, char ***outArgv) :
-                         useCmdArgs(false), configFileGiven(false){
+                         useCmdArgs(false), configFileGiven(false),
+                         settings(NULL){
     //For each command line argument
     for(int i = 0; i < inArgc; ++i){
         QString a(inArgv[i]);
@@ -49,6 +44,11 @@ AppSettings::AppSettings(int inArgc, char *inArgv[],
     argsInit();
 }
 
+AppSettings::~AppSettings(){
+    if(settings != NULL){
+        delete settings;
+    }
+}
 
 /**
  * @brief AppSettings::parse Divide arguments list into two subests
@@ -100,7 +100,6 @@ void AppSettings::parse(QString arg){
     }
 }
 
-
 /**
  * @brief AppSettings::argsInit Set precedence of config sources. Load settings.
  */
@@ -108,8 +107,14 @@ void AppSettings::argsInit(){
     bool settingsLoaded = false;
 
     if(configFileGiven){
-        settingsLoaded = loadFromGivenConfigFile();
+        if(loadConfigPath()){
+            settings = new FileParser();
+            dynamic_cast<FileParser*>(settings)->parseConfigFile(filePath); //!
+            settingsLoaded = settings->validate();
+        }
     }
+
+    exit(0);
 
     /*if(!settingsLoaded && useCmdArgs){
         settingsLoaded = loadFromCmd();
@@ -132,9 +137,7 @@ void AppSettings::argsInit(){
     }*/
 }
 
-
-bool AppSettings::loadFromGivenConfigFile(){
-    QString filePath;
+bool AppSettings::loadConfigPath(){
     int length = keysToConsume.length();
     if(length > 0){
         if(keysToConsume.contains(ST::CONFIG_LOCATION_KEY)){
@@ -144,124 +147,8 @@ bool AppSettings::loadFromGivenConfigFile(){
             return false;
         }
     }
-
-    if(!checkFileIsReadable(filePath)){
-        return false;
-    }
-
-    return parseConfigFile(filePath);
+    return true;
 }
-
-
-bool AppSettings::checkFileIsReadable(QString filePath){
-    QFileInfo fileInfo(filePath);
-    if(fileInfo.exists() &&
-            (fileInfo.isFile() && fileInfo.isReadable())){
-        return true;
-    }
-    return false;
-}
-
-
-bool AppSettings::parseConfigFile(QString filePath){
-    QSettings settings(filePath, QSettings::IniFormat);
-
-    QString localOutput = settings.value(ST::FILES_LOCATION_KEY, "").toString();
-    QString localLanguage = settings.value(ST::LANG_KEY, "").toString();
-    QString localInput= settings.value(ST::TEXT_LOCATION_KEY, "").toString();
-    QString localLog = settings.value(ST::LOG_LOCATION_KEY, "").toString();
-
-    bool error = false;
-    error |= setOutputLocation(localOutput);
-    error |= setLanguage(localLanguage);
-    error |= setInputLocation(localInput);
-    error |= setLogLocation(localLog);
-
-    if(error){
-        Console::print(ST::WRONG_CONFIG_FILE_MSG);
-    }
-
-    return error;
-}
-
-
-bool AppSettings::setOutputLocation(QString localOutput){
-    localOutput = localOutput.trimmed();
-    QFileInfo info(localOutput);
-
-    if(!info.exists()){
-        QDir dir(localOutput);
-        dir.mkdir(".");
-    }
-
-    QFileInfo infoCreated(localOutput);
-    if(infoCreated.exists() &&
-            (infoCreated.isDir() && infoCreated.isWritable())){
-        output = localOutput;
-        return true;
-    }
-
-    return false;
-}
-
-
-bool AppSettings::setLanguage(QString localLanguage){
-    localLanguage = localLanguage.trimmed();
-
-    bool result = false;
-
-    if(QString::compare(localLanguage, ST::PL_LANG, Qt::CaseInsensitive)){
-        result = true;
-    }
-
-    if(QString::compare(localLanguage, ST::EN_LANG, Qt::CaseInsensitive)){
-        result = true;
-    }
-
-    if(result){
-        language = localLanguage;
-    }
-
-    return result;
-}
-
-
-bool AppSettings::setInputLocation(QString localInput){
-    localInput = localInput.trimmed();
-
-    if(checkFileIsReadable(localInput)){
-        QFile file(localInput);
-        if(file.size() > 0){
-            input = localInput;
-            return true;
-        }
-    }
-    return false;
-}
-
-
-bool AppSettings::setLogLocation(QString localLog){
-    localLog = localLog.trimmed();
-
-    bool readable = checkFileIsReadable(localLog);
-    if(!readable){
-        createFile(localLog);
-    }
-
-    return checkFileIsReadable(localLog);
-}
-
-bool AppSettings::checkAndCreateDirectory(QString localOutput){
-    return false;
-}
-
-
-void AppSettings::createFile(QString path){
-    QFile file(path);
-    file.open(QIODevice::WriteOnly);
-    file.close();
-}
-
 
 /**
  * @brief AppSettings::displayHelp Displays help and stops program before calling constructor QApplication()
@@ -270,4 +157,3 @@ void AppSettings::displayHelp(){
     Console::print(ST::HELP_MSG);
     exit(0);
 }
-

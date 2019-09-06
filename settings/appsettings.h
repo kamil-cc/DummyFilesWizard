@@ -1,17 +1,13 @@
 #ifndef APPSETTINGS_H
 #define APPSETTINGS_H
 
-#include <QDir>
-#include <QFile>
-#include <QFileInfo>
-#include <QSettings>
+#include <QPointer>
 #include <QString>
 #include <QStringList>
 
-
-#include "text/statictext.h"
 #include "console/console.h"
-
+#include "text/statictext.h"
+#include "fileparser.h"
 
 class AppSettings : public QObject
 {
@@ -21,22 +17,18 @@ public:
     //Constructor
     AppSettings(int inArgc, char *inArgv[], int *outArgc, char ***outArgv);
 
+    //Destructor
+    ~AppSettings();
+
+    //Shortcut
+    typedef StaticText ST;
+
 private:
     //Methods
     void parse(QString arg);
     void argsInit();
+    bool loadConfigPath();
     void displayHelp();
-    bool loadFromGivenConfigFile();
-    bool checkFileIsReadable(QString filePath);
-    bool parseConfigFile(QString filePath);
-    bool checkAndCreateDirectory(QString filePath);
-    void createFile(QString path);
-
-    //Special setters
-    bool setOutputLocation(QString localOutput);
-    bool setLanguage(QString localLanguage);
-    bool setInputLocation(QString localInput);
-    bool setLogLocation(QString localLog);
 
 private:
     //Variables
@@ -45,12 +37,10 @@ private:
     QStringList argsToBypass;
     QStringList keysToConsume;
     QStringList valuesToConsume;
+    QString filePath;
 
-    //From settings
-    QString output;
-    QString language;
-    QString input;
-    QString log;
+    //Settings object
+    SettingsBase *settings;
 
 private:
     //Static constants

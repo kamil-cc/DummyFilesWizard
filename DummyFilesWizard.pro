@@ -19,7 +19,9 @@ SOURCES += main.cpp\
     templates/controller.cpp \
     text/statictext.cpp \
     console/console.cpp \
-    settings/appsettings.cpp
+    settings/appsettings.cpp \
+    settings/fileparser.cpp \
+    settings/settingsbase.cpp
 
 HEADERS  += dummywizard.h \
     templates/model.h \
@@ -27,7 +29,9 @@ HEADERS  += dummywizard.h \
     templates/controller.h \
     text/statictext.h \
     console/console.h \
-    settings/appsettings.h
+    settings/appsettings.h \
+    settings/fileparser.h \
+    settings/settingsbase.h
 
 FORMS    += dummywizard.ui
 
