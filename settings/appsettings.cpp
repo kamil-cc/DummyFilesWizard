@@ -105,22 +105,162 @@ void AppSettings::parse(QString arg){
  * @brief AppSettings::argsInit Set precedence of config sources. Load settings.
  */
 void AppSettings::argsInit(){
-    QString filePath;
+    bool settingsLoaded = false;
 
+    if(configFileGiven){
+        settingsLoaded = loadFromGivenConfigFile();
+    }
 
+    /*if(!settingsLoaded && useCmdArgs){
+        settingsLoaded = loadFromCmd();
+    }
 
+    if(!settingsLoaded && defaultConfigFileExist()){
+        settingsLoaded = loadDefaultConfigFile();
+        if(!settingsLoaded){
+            Console::print(ST::WRONG_CONFIG_FILE_MSG);
+        }
+    }
 
+    if(!settingsLoaded){
+        settingsLoaded = loadFromDefaults();
+    }
 
+    if(!settingsLoaded){
+        Console::print(ST::WRONG_DEFAULT_MSG);
+        exit(0);
+    }*/
 }
 
 
-/*int length = keysToConsume.length();
-if(length > 0){
-    if(keysToConsume.contains(ST::CONFIG_LOCATION_KEY)){
-        int idx = keysToConsume.indexOf(ST::CONFIG_LOCATION_KEY);
-        filePath = valuesToConsume.at(idx);
+bool AppSettings::loadFromGivenConfigFile(){
+    QString filePath;
+    int length = keysToConsume.length();
+    if(length > 0){
+        if(keysToConsume.contains(ST::CONFIG_LOCATION_KEY)){
+            int idx = keysToConsume.indexOf(ST::CONFIG_LOCATION_KEY);
+            filePath = valuesToConsume.at(idx);
+        }else{
+            return false;
+        }
     }
-}*/
+
+    if(!checkFileIsReadable(filePath)){
+        return false;
+    }
+
+    return parseConfigFile(filePath);
+}
+
+
+bool AppSettings::checkFileIsReadable(QString filePath){
+    QFileInfo fileInfo(filePath);
+    if(fileInfo.exists() &&
+            (fileInfo.isFile() && fileInfo.isReadable())){
+        return true;
+    }
+    return false;
+}
+
+
+bool AppSettings::parseConfigFile(QString filePath){
+    QSettings settings(filePath, QSettings::IniFormat);
+
+    QString localOutput = settings.value(ST::FILES_LOCATION_KEY, "").toString();
+    QString localLanguage = settings.value(ST::LANG_KEY, "").toString();
+    QString localInput= settings.value(ST::TEXT_LOCATION_KEY, "").toString();
+    QString localLog = settings.value(ST::LOG_LOCATION_KEY, "").toString();
+
+    bool error = false;
+    error |= setOutputLocation(localOutput);
+    error |= setLanguage(localLanguage);
+    error |= setInputLocation(localInput);
+    error |= setLogLocation(localLog);
+
+    if(error){
+        Console::print(ST::WRONG_CONFIG_FILE_MSG);
+    }
+
+    return error;
+}
+
+
+bool AppSettings::setOutputLocation(QString localOutput){
+    localOutput = localOutput.trimmed();
+    QFileInfo info(localOutput);
+
+    if(!info.exists()){
+        QDir dir(localOutput);
+        dir.mkdir(".");
+    }
+
+    QFileInfo infoCreated(localOutput);
+    if(infoCreated.exists() &&
+            (infoCreated.isDir() && infoCreated.isWritable())){
+        output = localOutput;
+        return true;
+    }
+
+    return false;
+}
+
+
+bool AppSettings::setLanguage(QString localLanguage){
+    localLanguage = localLanguage.trimmed();
+
+    bool result = false;
+
+    if(QString::compare(localLanguage, ST::PL_LANG, Qt::CaseInsensitive)){
+        result = true;
+    }
+
+    if(QString::compare(localLanguage, ST::EN_LANG, Qt::CaseInsensitive)){
+        result = true;
+    }
+
+    if(result){
+        language = localLanguage;
+    }
+
+    return result;
+}
+
+
+bool AppSettings::setInputLocation(QString localInput){
+    localInput = localInput.trimmed();
+
+    if(checkFileIsReadable(localInput)){
+        QFile file(localInput);
+        if(file.size() > 0){
+            input = localInput;
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool AppSettings::setLogLocation(QString localLog){
+    localLog = localLog.trimmed();
+
+    bool readable = checkFileIsReadable(localLog);
+    if(!readable){
+        createFile(localLog);
+    }
+
+    return checkFileIsReadable(localLog);
+}
+
+bool AppSettings::checkAndCreateDirectory(QString localOutput){
+    return false;
+}
+
+
+void AppSettings::createFile(QString path){
+    QFile file(path);
+    file.open(QIODevice::WriteOnly);
+    file.close();
+}
 
 
 /**
