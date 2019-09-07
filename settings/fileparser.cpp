@@ -13,7 +13,7 @@ bool FileParser::parseConfigFile(QString filePath){
 
     QString localOutput = settings.value(ST::FILES_LOCATION_KEY, "").toString();
     QString localLanguage = settings.value(ST::LANG_KEY, "").toString();
-    QString localInput= settings.value(ST::TEXT_LOCATION_KEY, "").toString();
+    QString localInput = settings.value(ST::TEXT_LOCATION_KEY, "").toString();
     QString localLog = settings.value(ST::LOG_LOCATION_KEY, "").toString();
 
     localOutput = localOutput.trimmed();
