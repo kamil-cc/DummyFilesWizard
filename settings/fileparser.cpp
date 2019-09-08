@@ -1,12 +1,15 @@
 #include "fileparser.h"
 
-FileParser::FileParser()
-{
+
+FileParser::FileParser(){
 }
+
 
 bool FileParser::parseConfigFile(QString filePath){
     if(!checkFileIsReadable(filePath)){
-        return false;
+        Console::print(ST::WRONG_CONFIG_FILE_MSG);
+        valid = false;
+        return valid;
     }
 
     QSettings settings(filePath, QSettings::IniFormat);
@@ -21,38 +24,36 @@ bool FileParser::parseConfigFile(QString filePath){
     localInput = localInput.trimmed();
     localLog = localLog.trimmed();
 
-    bool error = false;
-
     if(localOutput.length() == 0){
-        error = true;
+        valid = false;
     }
 
     if(localLanguage.length() == 0){
-        error = true;
+        valid = false;
     }
 
     if(localInput.length() == 0){
-        error = true;
+        //valid = false;
     }
 
     if(localLog.length() == 0){
-        error = true;
+        valid = false;
     }
 
-    if(error){
+    if(!valid){
         Console::print(ST::WRONG_CONFIG_FILE_MSG);
-        return error;
+        return valid;
     }
 
-    error |= setOutputLocation(localOutput);
-    error |= setLanguage(localLanguage);
-    error |= setInputLocation(localInput);
-    error |= setLogLocation(localLog);
+    valid &= setOutputLocation(localOutput);
+    valid &= setLanguage(localLanguage);
+    /*valid &=*/ setInputLocation(localInput);
+    valid &= setLogLocation(localLog);
 
-    if(error){
+    if(!valid){
         Console::print(ST::WRONG_CONFIG_FILE_MSG);
     }
 
-    return error;
+    return valid;
 }
 

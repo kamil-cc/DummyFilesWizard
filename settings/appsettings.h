@@ -42,10 +42,6 @@ private:
     //Settings object
     SettingsBase *settings;
 
-private:
-    //Static constants
-    static const QString CFG_FILENAME;
-    static const QString LOG_FILENAME;
 };
 
 #endif // APPSETTINGS_H

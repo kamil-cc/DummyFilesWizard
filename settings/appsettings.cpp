@@ -1,9 +1,5 @@
 #include "appsettings.h"
 
-//Default filenames
-const QString AppSettings::CFG_FILENAME = "cfg.ini";
-const QString AppSettings::LOG_FILENAME = ".log";
-
 /**
  * @brief AppSettings::AppSettings Parse command line arguments. Init settings.
  * @param inArgc counter received from main function
@@ -108,13 +104,15 @@ void AppSettings::argsInit(){
 
     if(configFileGiven){
         if(loadConfigPath()){
-            settings = new FileParser();
-            dynamic_cast<FileParser*>(settings)->parseConfigFile(filePath); //!
-            settingsLoaded = settings->validate();
+            FileParser *fileParser = new FileParser();
+            settingsLoaded = fileParser->parseConfigFile(filePath);
+            if(settingsLoaded){
+                settings = fileParser;
+            }else{
+                delete fileParser;
+            }
         }
     }
-
-    exit(0);
 
     /*if(!settingsLoaded && useCmdArgs){
         settingsLoaded = loadFromCmd();
