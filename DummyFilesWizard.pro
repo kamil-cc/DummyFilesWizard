@@ -21,7 +21,8 @@ SOURCES += main.cpp\
     console/console.cpp \
     settings/appsettings.cpp \
     settings/fileparser.cpp \
-    settings/settingsbase.cpp
+    settings/settingsbase.cpp \
+    settings/cmdparser.cpp
 
 HEADERS  += dummywizard.h \
     templates/model.h \
@@ -31,7 +32,8 @@ HEADERS  += dummywizard.h \
     console/console.h \
     settings/appsettings.h \
     settings/fileparser.h \
-    settings/settingsbase.h
+    settings/settingsbase.h \
+    settings/cmdparser.h
 
 FORMS    += dummywizard.ui
 

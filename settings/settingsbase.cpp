@@ -102,11 +102,11 @@ bool SettingsBase::setOutputLocation(QString localOutput){
 bool SettingsBase::setLanguage(QString localLanguage){
     bool result = false;
 
-    if(QString::compare(localLanguage, ST::PL_LANG, Qt::CaseInsensitive)){
+    if(!QString::compare(localLanguage, ST::PL_LANG, Qt::CaseInsensitive)){
         result = true;
     }
 
-    if(QString::compare(localLanguage, ST::EN_LANG, Qt::CaseInsensitive)){
+    if(!QString::compare(localLanguage, ST::EN_LANG, Qt::CaseInsensitive)){
         result = true;
     }
 
@@ -135,12 +135,24 @@ bool SettingsBase::setLogLocation(QString localLog){
     if(!readable){
         createFile(localLog);
     }
-    return checkFileIsWritable(localLog);
+    if(checkFileIsWritable(localLog)){
+        log = localLog;
+        return true;
+    }
+    return false;
 }
 
 
 bool SettingsBase::setConfigLocation(QString configLocation){
-    return setLogLocation(configLocation);
+    bool readable = checkFileIsReadable(configLocation);
+    if(!readable){
+        createFile(configLocation);
+    }
+    if(checkFileIsWritable(configLocation)){
+        config = configLocation;
+        return true;
+    }
+    return false;
 }
 
 

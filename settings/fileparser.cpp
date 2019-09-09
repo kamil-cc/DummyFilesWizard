@@ -57,3 +57,7 @@ bool FileParser::parseConfigFile(QString filePath){
     return valid;
 }
 
+
+QString FileParser::getDefaultConfigPath(){
+    return DEFAULT_CONFIG;
+}

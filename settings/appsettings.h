@@ -8,6 +8,7 @@
 #include "console/console.h"
 #include "text/statictext.h"
 #include "fileparser.h"
+#include "cmdparser.h"
 
 class AppSettings : public QObject
 {

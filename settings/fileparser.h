@@ -13,6 +13,7 @@ class FileParser : public SettingsBase
 public:
     FileParser();
     bool parseConfigFile(QString filePath);
+    QString getDefaultConfigPath();
 };
 
 #endif // FILEPARSER_H

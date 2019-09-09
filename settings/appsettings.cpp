@@ -102,37 +102,58 @@ void AppSettings::parse(QString arg){
 void AppSettings::argsInit(){
     bool settingsLoaded = false;
 
-    if(configFileGiven){
-        if(loadConfigPath()){
-            FileParser *fileParser = new FileParser();
-            settingsLoaded = fileParser->parseConfigFile(filePath);
-            if(settingsLoaded){
-                settings = fileParser;
-            }else{
-                delete fileParser;
-            }
+    //Read from file provided by user
+    if(configFileGiven && loadConfigPath()){
+        FileParser *fileParser = new FileParser();
+        settingsLoaded = fileParser->parseConfigFile(filePath);
+        if(settingsLoaded){
+            settings = fileParser;
+        }else{
+            delete fileParser;
         }
     }
 
-    /*if(!settingsLoaded && useCmdArgs){
-        settingsLoaded = loadFromCmd();
-    }
-
-    if(!settingsLoaded && defaultConfigFileExist()){
-        settingsLoaded = loadDefaultConfigFile();
-        if(!settingsLoaded){
-            Console::print(ST::WRONG_CONFIG_FILE_MSG);
+    //Read from commandline
+    if(!settingsLoaded && useCmdArgs){
+        CmdParser *cmdParser = new CmdParser();
+        settingsLoaded = cmdParser->parseConfigCmd(keysToConsume,
+                                                   valuesToConsume);
+        if(settingsLoaded){
+            settings = cmdParser;
+        }else{
+            delete cmdParser;
         }
     }
 
+    //Read from default cfg file
     if(!settingsLoaded){
-        settingsLoaded = loadFromDefaults();
+        FileParser *fileParser = new FileParser();
+        QString defaultConfigPath = fileParser->getDefaultConfigPath();
+        settingsLoaded = fileParser->parseConfigFile(defaultConfigPath);
+        if(settingsLoaded){
+            settings = fileParser;
+        }else{
+            delete fileParser;
+        }
     }
 
+    //Try to load failsafe defaults
+    if(!settingsLoaded){
+        SettingsBase *settingsBase = new SettingsBase();
+        settingsLoaded = settingsBase->validate();
+        if(settingsLoaded){
+            settings = settingsBase;
+        }else{
+            delete settingsBase;
+            settings = NULL;
+        }
+    }
+
+    //Failsafe are not valid
     if(!settingsLoaded){
         Console::print(ST::WRONG_DEFAULT_MSG);
         exit(0);
-    }*/
+    }
 }
 
 bool AppSettings::loadConfigPath(){
